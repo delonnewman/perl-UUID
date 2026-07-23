@@ -19,6 +19,7 @@ jobs:
         with:
           perl-version: ${{ matrix.perl }}
       - run: perl -V
+      - run: cpanm Devel::CheckLib
       - run: perl Makefile.PL
       - run: make
       - run: make test
