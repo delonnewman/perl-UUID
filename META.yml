@@ -1,0 +1,61 @@
+---
+abstract: 'Universally Unique Identifier library for Perl'
+author:
+  - 'Rick Myers <jrm@cpan.org>'
+build_requires:
+  Benchmark: '0'
+  CPAN::Meta: '0'
+  Config: '0'
+  Devel::CheckLib: '1.14'
+  DynaLoader: '0'
+  Exporter: '0'
+  ExtUtils::MakeMaker: '7.06'
+  ExtUtils::Manifest: '0'
+  Fcntl: '0'
+  File::Spec: '0'
+  File::Temp: '0.10'
+  Thread::Semaphore: '0'
+  Time::HiRes: '0'
+  Try::Tiny: '0'
+  blib: '0'
+  strict: '0'
+  threads: '0'
+  threads::shared: '0'
+  vars: '0'
+  version: '0.77'
+  warnings: '0'
+configure_requires:
+  Config: '0'
+  Devel::CheckLib: '1.14'
+  ExtUtils::MakeMaker: '7.06'
+  File::Spec: '0'
+  File::Temp: '0.10'
+  strict: '0'
+  warnings: '0'
+dynamic_config: 0
+generated_by: 'ExtUtils::MakeMaker version 7.76, CPAN::Meta::Converter version 2.150010'
+license: artistic_2
+meta-spec:
+  url: http://module-build.sourceforge.net/META-spec-v1.4.html
+  version: '1.4'
+name: UUID
+no_index:
+  directory:
+    - t
+    - inc
+provides:
+  UUID:
+    file: lib/UUID.pm
+    version: '0.38'
+requires:
+  Carp: '0'
+  DynaLoader: '0'
+  Exporter: '0'
+  Time::HiRes: '0'
+  blib: '0'
+  perl: '5.008001'
+  strict: '0'
+  vars: '0'
+  warnings: '0'
+version: '0.38'
+x_serialization_backend: 'CPAN::Meta::YAML version 0.012'

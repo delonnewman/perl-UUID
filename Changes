@@ -1,0 +1,268 @@
+Revision history for Perl extension UUID.
+
+0.38 Thu May 14 10:52:38 EDT 2026
+  - Use system randomness for seeding internal PRNG. Source is
+    platform-specific and preferred in the following order, if
+    available:
+    - arc4random()
+    - BCryptGenRandom()
+    - CryptGenRandom()
+    - getentropy()
+    - getrandom()
+    - /dev/urandom
+  - Move internal context to anonymous mmap to synchronize timestamps
+    between multiple processes or threads. This also means random
+    numbers from all processes/threads now come from a common pool,
+    eliminating chance of parallel duplication.
+  - Improved internal context locking, switching away from pthreads due
+    to cross-platform inconsistencies with respect to process-shared
+    mutexes. Now OpenBSD uses futex, Win32 uses SRWLocks, and OSX uses
+    GCD. Everywhere else uses sem_wait. These solutions were promoted to
+    top-tier after realizing they would have to be done anyway as
+    fallbacks for pthreads.
+  - Add internal try/catch to ensure locks are not orphaned and avoid
+    deadlock in fork/thread scenarios.
+  - Fix off-by-one in time adjustment causing occasional duplication on
+    very fast hosts. (Over 10M UUIDs/sec, so probably never seen in
+    production.) See, for example:
+    https://www.cpantesters.org/cpan/report/f26eddf4-dc5c-11f0-baa1-832b6e8775ea
+    - Scroll to failed test t/3unique/v6.t
+    - Notice the first 3 digit groups of each UUID.
+    - For v6 UUIDs, the first 3 groups are basically system time in 100ns steps.
+    - The first 12 UUIDs are increasing 1 count each.
+    - The next 11 UUIDs are also increasing 1 count each, repeating the
+      same times as the first 12. The sequence field (the 4th digit
+      group) has increased though, so this is okay.
+    - The 24th UUID repeats the 23rd.
+    - The burst ends with the 28th UUID.
+  - Sped up t/3unique non-forking tests to tickle off-by-one bug.
+  - Make t/3unique fork/prefork tests run in parallel.
+  - Make t/8threads tests try harder to produce dupes.
+  - Add fork/prefork tests for uncovered UUID versions.
+  - Drop Test::More in favor of lighter, faster, homegrown module.
+
+0.37 Mon Feb 24 04:25:27 EST 2025
+  - Fix build under gcc-15 default ISO C23.
+    - Thanks Petr Pisar. [rt.cpan.org #159112]
+
+0.36 Sat Jun 22 21:24:39 EDT 2024
+  - Fix distro tests run from read-only location.
+    - Thanks Petr Pisar. [rt.cpan.org #153854]
+
+0.35 Wed May 29 14:40:34 EDT 2024
+  - Reworked persist file handling for speed.
+  - Reworked seeding for front-loading prefork processes.
+    - Thanks again to Christopher Rasch-Olsen Raa.
+
+0.34 Mon Apr 29 21:03:51 EDT 2024
+  - Added version 3 and 5 UUIDs.
+  - Added deferred persistence, default 0.001 seconds.
+  - Now forces reseed after fork().
+    - Thanks to Christopher Rasch-Olsen Raa. [rt.cpan.org #152751]
+
+0.33 Sat Mar 16 07:34:19 EDT 2024
+  - Removed most bundled e2fsprogs UUID code.
+  - Added :mac=random/unique to hide real MAC.
+  - Fixed finding mac address on native Win32 builds.
+  - Added version 6 and 7 UUIDs.
+  - Switched to ChaCha20 as RNG salted with Xoshiro256++.
+  - Added uuid1(), uuid4() to return strings directly.
+  - Added generate_v1() and generate_v4() for binaries.
+  - Fixed duplicate Win32 random UUIDs when > 1K/sec.
+  - Fixed Win32 v1 throttling when > 10K/sec.
+  - Fixed duplicate v1 UUIDs everywhere when > 10M/sec.
+  - Exposed persistent state function.
+  - Added :persist to make state path configurable.
+  - Fixed possible symlink attack on persistent file.
+  - Added generate_v0() and uuid0() to generate null UUIDs.
+  - Added benchmarks in tests.
+    > make test TEST_VERBOSE=1 TEST_FILES=t/9benchmark/*.t
+  - Added benchmark comparing version speeds, calling styles,
+    and persistence.
+    > make compare
+  - Now believed to be thread safe.
+
+0.32 Tue Dec 12 23:23:51 EST 2023
+  - Expose uuid_type().
+  - Expose uuid_variant().
+  - Expose uuid_time().
+  - Remove dependence on system libraries.
+  - Update POD.
+
+0.31 Mon Nov  6 23:43:58 EST 2023
+  - Make generated metafiles authoritative and test.
+    - Thanks to twata. [rt.cpan.org #150311]
+  - Re-enable warnings, per Kwalitee.
+  - Rename License to LICENSE, per Kwalitee.
+  - Add 'provides' info to metafiles, per Kwalitee.
+  - Add test deps, per Kwalitee.
+  - Switch to non-system types.
+  - Fix make order.
+  - Fix misguided config.h.
+  - Fix missing prototypes.
+  - Fix missing patch.
+  - Split to two level diff utils.
+
+0.30 Tue Oct 31 17:16:50 EDT 2023
+  - Bump ExtUtils::MakeMaker prereq to 6.64 (first version supporting
+    TEST_REQUIRES).
+  - Better support for older Win32.
+  - Fix trivial build warnings.
+
+0.29 Wed Oct 25 01:15:57 EDT 2023
+  - Bump prereq version for Devel::CheckLib to 1.14 to fix problems with
+    Strawberry versions 5.18 to 5.28. Earlier Strawberry did not ship
+    Devel::CheckLib. Newer versions shipped 1.14 or later.
+    - Thanks to twata. [rt.cpan.org #143841]
+
+0.28 Sat Dec 29 00:59:25 EST 2018
+  - Add OSSP variant of libuuid. CentOS7 (and presumably other RedHat
+    derivatives) have packages for both OSSP and e2fs. Favor e2fs, if
+    found, since our implementation of OSSP is probably slower.
+    - Thanks to Greg Cox. [rt.cpan.org #128122]
+
+0.27 Fri Sep 23 01:52:00 EDT 2016
+  - Update SYNOPSIS to remove ":all". Indiscriminate exports could cause
+    problems with other modules, such as File::Copy::copy().
+    - Thanks to Slaven Rezic. [rt.cpan.org #118033]
+
+0.26 Sat May  7 02:32:52 EDT 2016
+  - Fix broken @ARGV handling in Makefile.PL regarding debug flag.
+    - Also changed DEBUG flag to UUID_DEBUG
+    - Thanks to gregor herrmann. [rt.cpan.org #114213]
+
+0.25 Mon Mar 14 10:15:55 EDT 2016
+  - Changed all prints in Makefile.PL to warns and made both
+    unbuffered to match Devel::CheckLib
+  - Remove uuid_unparse_lower/upper() calls which don't exist
+    on SunOS
+  - Ignore TEST_REQUIRES on EUMM < 6.64
+  - Try to find correct link lib (-lrpcrt4, -luuid, -lc, in order)
+  - Make string argument a char** for uuid_to_string()
+  - Add note on Linux UUID packages
+  - Moved test.pl to t/test.t and updated to Test::More
+  - Changed debug() to emit to stderr to match Devel::CheckLib
+  - Removed Makefile.PL verbosity
+  - Added switch to Makefile.PL to incite verbosity
+  - Become verbose for smokers only on dev releases
+  - Added build notice for missing header/libraries
+  - Bail out of build if uuid_t size == 0
+  - Reorganized header/library search to find wayward OSX
+    - Thanks to David Wheeler and William Faulk for pointers and
+      lots of patience in testing. [rt.cpan.org #104394]
+
+0.24 Mon Jan 19 01:05:14 EST 2015
+  - Add 'extern "C"' for g++
+
+0.23 Sun Dec 28 18:58:04 EST 2014
+  - Reverse order of rpc.h and rpcdce.h in UUID.xs (rpc.h first)
+
+0.22 Sun Dec 28 08:42:23 EST 2014
+  - Ugh! Forgot to include rpcdce.h in UUID.xs
+
+0.21 Sun Dec 28 08:35:23 EST 2014
+  - Instead of unistd.h, try rpcdce.h on Win
+  - Minor cleanup in test.pl
+
+0.20 Sat Dec 27 19:27:28 EST 2014
+  - Also include unistd.h when using Rpc.h (Win)
+  - Fix pointer problem in -luuid search on Win
+  - Fix minor header propagation problem in Makefile.PL
+
+0.19 Fri Dec 26 17:09:12 EST 2014
+  - Fix pointer confusion in do_uuid() on BSD [rt.cpan.org #101137]
+
+0.18 Fri Dec 26 08:20:06 EST 2014
+  - Allow for non-true/false return from uuid_from_string() on BSD
+  - Remove unused dependency on Config.pm
+  - Added yet more debug info for 'make test' time
+  - Change -DPERL__UUID__UUID_BUF_SZ to -DPERL__UUID__STRUCT_SZ
+
+0.17 Fri Dec 26 05:05:13 EST 2014
+  - Removed two nested comments on BSD /* sigh */
+  - Let e2fs machines use sv_cmp too (let's see if OSX Frankenbox works)
+  - Changed warns in Makefile.PL to prints
+
+0.16 Thu Dec 25 18:24:23 EST 2014
+  - Typo on Windows/BSD
+  - Trying sv_cmp() instead of uuid_compare() on RPC-based machines
+
+0.15 Thu Dec 25 05:55:13 EST 2014
+  - REALLY fix do_uuid() typo. Really.
+  - Fix pointer problems on BSD
+  - Removed uuid_copy() from BSD. How did that get there? =)
+  - Added yet another test for OSX segfault!
+  - Check and set -DPERL__UUID__UUID_BUF_SZ=?? in Makefile.PL
+    (Should be the same everywhere, right? Right?)
+
+0.14 Wed Dec 24 22:39:42 EST 2014
+  - Fix typo in Windows do_uuid() for compiler fail on strawberry
+  - Now checking for all header files instead of taking first
+  - Added more detail for failed interface search
+  - Added check for uuid struct size
+
+0.13 Wed Dec 24 07:45:49 EST 2014
+  - Split -luuid search into header file and interface type stages
+  - Removed SvPV_nolen everywhere (buffer overflows)
+
+0.12 Wed Dec 24 03:07:50 EST 2014
+  - Added support for non-e2fs systems (BSD, OSX, Win)
+
+0.11_01 Tue Dec 23 20:23:29 EST 2014
+  - Modified test.pl to hopefully catch where MacOSX fails
+  - Heavy mods to Makefile.PL to differentiate between interfaces
+  - Makefile.PL *lots* more verbose
+  - Lots of #ifdefs added in XS
+  - First shot at code that works for BSD style interface
+
+0.11 Mon Dec 22 19:03:09 EST 2014
+  - Looks like I've managed to cut the failure reports down a little TOO
+    far, so now splitting the search for -luuid into two separate
+    phases. The first, which I don't want to deal with right now, tests
+    for usability of the -luuid flag by itself. The second, tests for
+    usability of individual functions. We'll deal with platforms that
+    actually find libuuid first, then MAYBE revisit others.
+
+0.10 Mon Dec 22 11:55:30 EST 2014
+  - Added clear() and is_null()
+  - Added copy() and compare()
+  - Added unparse_lower() and unparse_upper()
+  - Added generate_random() and generate_time()
+
+0.09 Mon Dec 22 04:31:26 EST 2014
+  - Drag test.pl into this century using Test.pm
+  - Add postamble to Makefile to generate README
+  - Overhaul POD
+  - Fix MacOS warning "unsigned char* <--> char*"
+
+0.08 Sun Dec 21 06:06:21 EST 2014
+  - Added README with pod2text UUID.pm README
+  - Switched libuuid search to Devel::CheckLib
+
+0.07 Sat Dec 20 21:12:17 EST 2014
+  - Updated Makefile.PL
+  - Added search for -luuid at Makefile.PL time
+  - Updated license and POD to Artistic 2.0
+
+0.06 Thu Dec 18 08:01:44 EST 2014
+  - Took over maintaining (Rick Myers - JRM)
+  - Added uuid()
+
+0.05 Fri Dec 14 20:00:00 GMT 2012
+  - Took over maintaining (Lukas Zapletal - LZAP)
+  - Version bump (no changes)
+  - Releasing in the original location
+
+0.04 Wed Jul 22 20:17:26 PDT 2009
+  - Seems to be abandoned (again)
+  - Bump version number and upload to PAUSE
+
+0.03  Fri Jan 12 15:24:24 MST 2007
+  - Added Artistic license
+  - Took over maintaining (Colin Faber - CFABER)
+
+0.02  Unknown
+  - unknown changes
+
+0.01  Thu Feb  8 06:07:59 2001
+  - original version; created by h2xs 1.20 with options -A -n UUID
