@@ -19,7 +19,8 @@ jobs:
         with:
           perl-version: ${{ matrix.perl }}
       - run: perl -V
-      - run: cpanm Devel::CheckLib Try::Tiny
+      - run: cpanm Devel::CheckLib
+      - run: cpanm Try::Tiny
       - run: perl Makefile.PL
       - run: make
       - run: make test
