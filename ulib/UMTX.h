@@ -78,7 +78,7 @@ https://www.codestudy.net/blog/why-are-sem-init-sem-getvalue-sem-destroy-depreca
 */
 /* For OSX and archlinux but arch seems to have a working sem_init/wait */
 /* dispatch_semaphore_t is a pointer type */
-#define UMTX_init SMEM->LOCK = dispatch_semaphore_create(0)
+#define UMTX_init SMEM->LOCK = dispatch_semaphore_create(1)
 #define UMTX_lock dispatch_semaphore_wait(SMEM->LOCK, DISPATCH_TIME_FOREVER)
 #define UMTX_unlock dispatch_semaphore_signal(SMEM->LOCK)
 
